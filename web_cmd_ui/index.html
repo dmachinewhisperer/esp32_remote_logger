@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebSocket Logging</title>
+</head>
+<body>
+<h1>WebSocket Logging</h1>
+<div id="logArea" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 5px;"></div>
+
+<script>
+// Function to append a message to the log area
+function appendToLog(message) {
+    var logArea = document.getElementById('logArea');
+    logArea.innerHTML += message + '<br>';
+    logArea.scrollTop = logArea.scrollHeight; // Auto-scroll to the bottom
+}
+
+// WebSocket connection URL
+var wsUrl = 'ws://172.22.207.166/ws';
+
+// Create a new WebSocket instance
+var ws = new WebSocket(wsUrl);
+
+// Event listener for WebSocket open event
+ws.onopen = function(event) {
+    appendToLog('WebSocket connection opened');
+    ws.send("log");
+};
+
+// Event listener for WebSocket message event
+ws.onmessage = function(event) {
+    var message = event.data; // Message received from the server
+    appendToLog('Message from server: ' + message);
+};
+
+// Event listener for WebSocket close event
+ws.onclose = function(event) {
+    appendToLog('WebSocket connection closed');
+};
+
+// Event listener for WebSocket error event
+ws.onerror = function(event) {
+    appendToLog('WebSocket error occurred');
+};
+</script>
+</body>
+</html>
