@@ -1,0 +1,37 @@
+
+body {
+  font-family: Consolas, monospace;
+  background-color: #000;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+.sidebar {
+  background-color: #222;
+  width: 200px;
+  height: 100vh;
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+}
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+}
+.sidebar li {
+  padding: 10px;
+  cursor: pointer;
+}
+.sidebar li:hover {
+  background-color: #444;
+}
+.command-line {
+  overflow-y: scroll;
+  height: 100vh;
+  margin-left: 200px; 
+  padding: 20px;
+}
+.log-entry {
+  color: #fff; 
+}
+
