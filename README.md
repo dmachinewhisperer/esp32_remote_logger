@@ -1,6 +1,8 @@
 # Introduction
 This is a minimal ESP-IDF component for network logging for debugging ESP32 microcontrolllers. It redirects the log output from UART0 to a WebSocket connection when it rendered on a web UI that looks like a command-line. It automatically takes care of redirecting the logging to UART0 when the remote client disconnets. 
 
+![alt text](image-3.png)
+
 # Target Framework and Device
 ESP-IDF and ESP32 family of microchips (written entirely in C and  easily adaptable to work on other platforms)
 
