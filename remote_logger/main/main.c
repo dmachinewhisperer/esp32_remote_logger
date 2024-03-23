@@ -4,7 +4,12 @@ static char *TAG = "main";
 
 void test_remote_logging(){
     while(1){
-        ESP_LOGI(TAG, "Remote Logging Test...");
+        ESP_LOGE(TAG, "Remote Logging Test Error");
+        ESP_LOGW(TAG, "Remote Logging Test Warn");
+        ESP_LOGI(TAG, "Remote Logging Test Info");
+        ESP_LOGD(TAG, "Remote Logging Test Debug");
+        ESP_LOGV(TAG, "Remote Logging Test Verbose");
+
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
