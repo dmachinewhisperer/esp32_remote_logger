@@ -1,49 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebSocket Logging</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Command-line</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 </head>
 <body>
-<h1>WebSocket Logging</h1>
-<div id="logArea" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 5px;"></div>
+<!-- Left Sidebar -->
+<div class="sidebar">
+  <ul>
+    <li id="connect"><button id="connectBtn"><i class="fab fa-usb"></i>  Connect Device</button></li>
+    Status: <span id="status" style="color: red;">Disconnected</span>
 
-<script>
-// Function to append a message to the log area
-function appendToLog(message) {
-    var logArea = document.getElementById('logArea');
-    logArea.innerHTML += message + '<br>';
-    logArea.scrollTop = logArea.scrollHeight; // Auto-scroll to the bottom
-}
+  </ul>
+</div>
 
-// WebSocket connection URL
-var wsUrl = 'ws://172.22.207.166/ws';
 
-// Create a new WebSocket instance
-var ws = new WebSocket(wsUrl);
 
-// Event listener for WebSocket open event
-ws.onopen = function(event) {
-    appendToLog('WebSocket connection opened');
-    ws.send("log");
-};
+  <!-- Command Line Interface -->
+  <div class="command-line" id="command-line">
+    <!-- Log entries will be inserted here dynamically -->
+  </div>
 
-// Event listener for WebSocket message event
-ws.onmessage = function(event) {
-    var message = event.data; // Message received from the server
-    appendToLog('Message from server: ' + message);
-};
-
-// Event listener for WebSocket close event
-ws.onclose = function(event) {
-    appendToLog('WebSocket connection closed');
-};
-
-// Event listener for WebSocket error event
-ws.onerror = function(event) {
-    appendToLog('WebSocket error occurred');
-};
-</script>
+  <script src="script.js"></script>
+ 
 </body>
 </html>
