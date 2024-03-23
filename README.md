@@ -1,52 +1,48 @@
 # Introduction
-
-PID controllers are widely used in robotics and process automation. Often designers recompile the executable many times when tuning the controller. This component provides a window into the controller to tune it in real time, avoiding hardcoding the gain values and therefore multiple recompilations of the source files. 
+This is a minimal ESP-IDF component for network logging for debugging ESP32 microcontrolllers. It redirects the log output from UART0 to a WebSocket connection when it rendered on a web UI that looks like a command-line. It automatically takes care of redirecting the logging to UART0 when the remote client disconnets. 
 
 # Target Framework and Device
 ESP-IDF and ESP32 family of microchips (written entirely in C and  easily adaptable to work on other platforms)
 
-# Tuning Strategies Supported
-## Local Tuning
-- You need to build a simple circuit as described below (default pins).
-```
-    a. POT1    -> ADC1_CHAN0
-    b. POT1    -> ADC1_CHAN3
-    c. POT1    -> ADC1_CHAN6
-    d. tactile -> GPIO13
-```
-- You may set the pins as you wish in the Kconfig file at the root of the component. 
-
-- When the tactile is pressed, an interrupt fires and the ISR samples the ADCs which the POTs are connected to. These values are assigned to P, I, D global variables and written to NVS to persist between power cycles. 
-
-## Network Tuning. 
-- You need to setup a simple app (such as the one provided alongside). 
-- When the components is configured to enable this mode, it opens a WebSocket server on port 80. You need to send the PID values in the form "P I D" over this connection to the server. The values are modified and written to NVS. 
+## Logging Levels Supported
+- Info (ESP_LOGI())
+- Error (ESP_LOGE())
+- Warning (ESP_LOGW())
 
 # Setup 
-Include the component in your project. 
-The following boilerplate must be present in your application code to configure the interfaces properly. 
+## Adding the component to your project
+There are a couple of ways you can include the component in your project. 
+1. Place it in the `components` directory on the same level as your `main` so that the build system automatically discovers it. 
+```
+        project-root/
+        │
+        ├── components
+        ├── main
+        ├── CMakeLists.txt
+        └── README.md
+```
+
+2. Point the build system to the directory where it resides using the `EXTRA_COMPONENT_DIRS` variable in your root CMakeLists.txt
+```
+set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/your/path/to/logger)
+```
+
+## Starting the logger in your code 
+The following boilerplate must be present in your application code to configure the interfaces properly before starting the logger. 
 ```
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-```
- - To load previous PID values, before starting any type of tuning, load the values from NVS:
- ```
-     load_pid_values();
- ```
-## If using Local Tuning
-- In your application code, call:
-```
-    start_local_pid_tuner();
-```
-- Build your circut and modify the Kconfig if need be (i.e if using different pins)
 
-## If using Network Tuning
-- In your application code, call, 
+    ESP_ERROR_CHECK(example_connect()); (or setup Wi-Fi)
 ```
-    start_socket_pid_tuner();
+ 
+In your application code, call:
 ```
-- Enable WebSocket over HTTP in menuconfig, 
+    start_remote_logger();
+```
+
+Enable WebSocket over HTTP in menuconfig before building, 
 ```
 menuconfig -> Component Config -> HTTP Server -> Websocket Server Support
 ```
@@ -61,43 +57,49 @@ menuconfig -> Example Configuration
 
 # Running
 
-- If using network tuning, when the application starts up, the IP of the server is printed on the serial console. Feed this to your frontend application and send the appropirate string format ("P_value I_value D_value")
+- If building your own frontend application, it should connect to the ESP32 over WebSocket and send the string "log" after handshake to begin recieving logs. 
+- If using the application bundled with the component, enter the IP address of the ESP32 from the left pane and "Enter".  
 
-- If using the provided basic webapp, set the following line accordingly in `script.js` :
-```
-ws = new WebSocket("ws://172.22.202.69:80/ws");
-``` 
-
-# Notes
-- The two tuning methods can be used independently or at the same time without conflicts.
-- The ADC attenuation is set to ADC_ATTEN_DB_12 limiting the measurable input range to 150 mV ~ 2450 mV. Plan accordingly when setting up the POTs.
+![alt text](image-2.png)
 
 # Sample Serial Monitor Output
 ```
-I (813) example_connect: Connecting to GITAM...
-I (813) example_connect: Waiting for IP(s)
-I (3223) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1
+I (768) example_connect: Connecting to GITAM...
+I (778) example_connect: Waiting for IP(s)
+I (3188) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1
+I (3428) wifi:state: init -> auth (b0)
+I (3448) wifi:state: auth -> assoc (0)
+I (3458) wifi:state: assoc -> run (10)
+I (3518) wifi:connected with GITAM, aid = 1, channel 11, BW20, bssid = 6c:8d:77:5d:98:a3
+I (3518) wifi:security: WPA2-PSK, phy: bgn, rssi: -80
+I (3518) wifi:pm start, type: 1
 
-I (5603) esp_netif_handlers: example_netif_sta ip: 172.22.202.69, mask: 255.255.240.0, gw: 172.22.192.1
-I (5603) example_connect: Got IPv4 event: Interface "example_netif_sta" address: 172.22.202.69
-I (5613) example_connect: Got IPv6 event: Interface "example_netif_sta" address: fe80:0000:0000:0000:b2b2:1cff:fea7:4080, type: ESP_IP6_ADDR_IS_LINK_LOCAL
-I (5623) example_common: Connected to example_netif_sta
-I (5633) example_common: - IPv4 address: 172.22.202.69,
-I (5633) example_common: - IPv6 address: fe80:0000:0000:0000:b2b2:1cff:fea7:4080, type: ESP_IP6_ADDR_IS_LINK_LOCAL
-I (5643) ws_server: Starting server on port: '80'
-I (5653) ws_server: Registering URI handlers
-I (5653) main_task: Returned from app_main()
-
-I (42473) ws_server: Handshake done, the new connection was opened
-W (42493) wifi:[ADDBA]rx delba, code:37, delete tid:0
-I (46783) ws_server: frame len is 8
-I (46783) ws_server: Got packet with message: 65 36 50
-I (46783) ws_server: Packet type: 1
-I (46783) ws_server: P, I, D was set Remotely.
-I (46803) helper: PID saved to NVS: P = 65, I = 36, D = 50
-
-I (6366) pid_tuner_local: P = 951, I = 0, D = 0
-I (6376) helper: PID saved to NVS: P = 951, I = 0, D = 0
-I (14446) pid_tuner_local: P = 952, I = 532, D = 0
-I (14456) helper: PID saved to NVS: P = 952, I = 532, D = 0
+I (3548) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (3558) wifi:<ba-add>idx:0 (ifx:0, 6c:8d:77:5d:98:a3), tid:6, ssn:2, winSize:64
+I (4588) example_connect: Got IPv6 event: Interface "example_netif_sta" address: fe80:0000:0000:0000:26dc:c3ff:fed1:53e8, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5028) esp_netif_handlers: example_netif_sta ip: 172.22.207.166, mask: 255.255.240.0, gw: 172.22.192.1
+I (5028) example_connect: Got IPv4 event: Interface "example_netif_sta" address: 172.22.207.166
+I (5038) example_common: Connected to example_netif_sta
+I (5038) example_common: - IPv4 address: 172.22.207.166,
+I (5048) example_common: - IPv6 address: fe80:0000:0000:0000:26dc:c3ff:fed1:53e8, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5058) remote_logger: Starting server on port: '80'
+I (5068) remote_logger: Registering URI handlers
+E (5068) main: Remote Logging Test Error
+W (5068) main: Remote Logging Test Warn
+I (5078) main: Remote Logging Test Info
+E (10078) main: Remote Logging Test Error
+W (10078) main: Remote Logging Test Warn
+I (10078) main: Remote Logging Test Info
+I (10668) remote_logger: Handshake done,  new connection opened
+I (10678) remote_logger: Redirecting Logging To WebSocket
+W (75078) remote_logger: Client disconnected. Logging redirected to UART0
+W (75078) main: Remote Logging Test Warn
+I (75078) main: Remote Logging Test Info
+E (80078) main: Remote Logging Test Error
+W (80078) main: Remote Logging Test Warn
+I (80078) main: Remote Logging Test Info
+I (83438) remote_logger: Handshake done,  new connection opened
+I (83448) remote_logger: Redirecting Logging To WebSocket
 ```
+# Sample Web Logging Output
+![alt text](image-3.png)
